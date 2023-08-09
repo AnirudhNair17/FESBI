@@ -1,0 +1,10 @@
+0 Common Myna 
+1 Coppersmith Barbet
+2 Indian Golden Oriole
+3 Jungle Babbler 
+4 Oriental Magpie Robbin 
+5 Peafowl
+6 Shikra
+7 Spotted Dove 
+8 White Breasted Waterhen 
+9 Yellow Wattled Lapwing 
