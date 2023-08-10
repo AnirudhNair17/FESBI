@@ -5,6 +5,8 @@ from streamlit_lottie import st_lottie
 from PIL import Image, ImageOps
 import numpy as np
 import os
+import uuid
+
 
 url = requests.get("https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json")
 url_json = dict()
@@ -99,7 +101,7 @@ if __name__ == "__main__":
         confidence_threshold = 0.97
 
         if prediction[0][np.argmax(prediction[0])] < confidence_threshold:
-            st.write("Top 3 Possible Classes:")
+            st.write("Please select the correct species from the following options:")
             prediction = model.predict(data)
 
             # Get the top three predicted classes and their corresponding confidence scores
@@ -126,7 +128,7 @@ if __name__ == "__main__":
                     st.write(f"Reference image for {class_name} saved.")
                     break
             else:  # This else block is executed if the for loop completes without a break
-                st.write("No class selected. Click 'I don't know' to save the image.")
+                pass
         else:
             st.write("Feedback:")
             feedback_option = st.radio("Did you find the classification accurate?", ("Like", "Dislike"))
@@ -151,9 +153,15 @@ if __name__ == "__main__":
                 # Add an "I don't know" button
                 if st.button("I don't know"):
                     st.write("Thank you for your response. The image has been saved for further analysis.")
-                    unknown_image_path = os.path.join(reference_images_folder, "unknown.jpg")
+
+                    # Generate a unique filename using UUID (Universally Unique Identifier)
+                    unique_filename = f"unknown_{str(uuid.uuid4())[:8]}.jpg"
+
+                    unknown_image_path = os.path.join(reference_images_folder, unique_filename)
                     with open(unknown_image_path, "wb") as f:
                         f.write(image_file.getvalue())
+
                     st.write("Unknown image saved.")
+
 
 
