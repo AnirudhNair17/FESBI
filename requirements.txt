@@ -1,7 +1,7 @@
-keras==2.12.0
-numpy==1.25.0
-Pillow==9.5.0
-Pillow==10.0.0
-Requests==2.31.0
-streamlit==1.23.1
-streamlit_lottie==0.0.5
+keras
+numpy
+Pillow
+Pillow
+Requests
+streamlit
+streamlit_lottie
