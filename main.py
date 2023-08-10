@@ -1,13 +1,10 @@
 import streamlit as st
 import keras
-import webbrowser
 import requests
 from streamlit_lottie import st_lottie
 from PIL import Image, ImageOps
 import numpy as np
 import os
-import geocoder
-import pandas as pd
 
 url = requests.get("https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json")
 url_json = dict()
