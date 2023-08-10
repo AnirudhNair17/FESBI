@@ -1,10 +1,13 @@
 import streamlit as st
 import keras
+import webbrowser
 import requests
 from streamlit_lottie import st_lottie
 from PIL import Image, ImageOps
 import numpy as np
 import os
+import geocoder
+import pandas as pd
 
 url = requests.get("https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json")
 url_json = dict()
@@ -125,6 +128,8 @@ if __name__ == "__main__":
                         f.write(image_file.getvalue())
                     st.write(f"Reference image for {class_name} saved.")
                     break
+            else:  # This else block is executed if the for loop completes without a break
+                st.write("No class selected. Click 'I don't know' to save the image.")
         else:
             st.write("Feedback:")
             feedback_option = st.radio("Did you find the classification accurate?", ("Like", "Dislike"))
@@ -145,3 +150,13 @@ if __name__ == "__main__":
                         with open(reference_image_path, "wb") as f:
                             f.write(image_file.getvalue())
                         st.write(f"Reference image for {correct_name} saved.")
+
+                # Add an "I don't know" button
+                if st.button("I don't know"):
+                    st.write("Thank you for your response. The image has been saved for further analysis.")
+                    unknown_image_path = os.path.join(reference_images_folder, "unknown.jpg")
+                    with open(unknown_image_path, "wb") as f:
+                        f.write(image_file.getvalue())
+                    st.write("Unknown image saved.")
+
+
