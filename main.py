@@ -6,7 +6,13 @@ from PIL import Image, ImageOps
 import numpy as np
 import os
 import uuid
+import webbrowser  # Import the webbrowser module
 
+# URLs for social media and About section
+linkedin_url = "https://www.linkedin.com/company/fesforcommons/"
+gmail_url = "mailto:ashok@fes.org.in"
+youtube_url = "https://www.youtube.com/@ecologicalsecurity"
+about_url = "https://fes.org.in/about/our-mission"
 
 url = requests.get("https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json")
 url_json = dict()
@@ -15,7 +21,7 @@ if url.status_code == 200:
     url_json = url.json()
 else:
     print("error")
-
+ 
 animation_width = 300
 animation_height = 300
 
@@ -27,6 +33,7 @@ model = keras.models.load_model("keras_model.h5", compile=False)
 
 # Load the labels
 class_names = open("labels.txt", "r").readlines()
+
 
 def classify_bird(image_path):
     """Classifies a bird image and displays the results in a Streamlit UI."""
@@ -54,7 +61,7 @@ def classify_bird(image_path):
     top_confidence = prediction[0][top_class_idx]
     top_class_name = class_names[top_class_idx].strip()[2:]
 
-    st.title("Bird Classification App")
+    st.title("Bird Identification  App")
 
     st.image(image, caption="Uploaded Image:")
     st.write("Predicted Bird Class:")
@@ -78,8 +85,7 @@ reference_images_folder = "reference_images"
 os.makedirs(reference_images_folder, exist_ok=True)
 
 if __name__ == "__main__":
-    st.title("Bird Classification App")
-    st.write("This app classifies bird images using a deep learning model.")
+    st.title("Bird Identification App")
 
     image_file = st.file_uploader("Upload an image of a bird:")
     if image_file is not None:
@@ -163,5 +169,17 @@ if __name__ == "__main__":
 
                     st.write("Unknown image saved.")
 
-
-
+    # Display icons at the bottom horizontally with links
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("LinkedIn", key="linkedin"):
+            webbrowser.open_new_tab(linkedin_url)
+    with col2:
+        if st.button("Gmail", key="gmail"):
+            webbrowser.open_new_tab(gmail_url)
+    with col3:
+        if st.button("YouTube", key="youtube"):
+            webbrowser.open_new_tab(youtube_url)
+    with col4:
+        if st.button("About", key="about"):
+            webbrowser.open_new_tab(about_url)
