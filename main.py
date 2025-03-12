@@ -1,5 +1,5 @@
 import streamlit as st
-import keras
+import tensorflow as tf  # Use TensorFlow for model loading
 import requests
 from streamlit_lottie import st_lottie
 from PIL import Image, ImageOps
@@ -9,177 +9,102 @@ import uuid
 import webbrowser  # Import the webbrowser module
 
 # URLs for social media and About section
-linkedin_url = "https://www.linkedin.com/company/fesforcommons/"
-gmail_url = "mailto:ashok@fes.org.in"
-youtube_url = "https://www.youtube.com/@ecologicalsecurity"
-about_url = "https://fes.org.in/about/our-mission"
+LINKEDIN_URL = "https://www.linkedin.com/company/fesforcommons/"
+GMAIL_URL = "mailto:ashok@fes.org.in"
+YOUTUBE_URL = "https://www.youtube.com/@ecologicalsecurity"
+ABOUT_URL = "https://fes.org.in/about/our-mission"
 
-url = requests.get("https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json")
-url_json = dict()
+# Load Lottie animation
+lottie_url = "https://lottie.host/50849054-36b4-4b5d-8cd4-772f0ec00d5d/K9KMg8R09O.json"
+lottie_json = requests.get(lottie_url).json() if requests.get(lottie_url).status_code == 200 else {}
 
-if url.status_code == 200:
-    url_json = url.json()
-else:
-    print("error")
- 
-animation_width = 300
-animation_height = 300
-
-st_lottie(url_json, width=animation_width, height=animation_height)
+st_lottie(lottie_json, width=300, height=300)
 np.set_printoptions(suppress=True)
 
-# Load the model
-model = keras.models.load_model("keras_model.h5", compile=False)
+# Load the model with error handling
+try:
+    model = tf.keras.models.load_model("keras_model.h5", compile=False)
+except Exception as e:
+    st.error(f"Error loading model: {e}")
+    st.stop()  # Stop execution if the model fails to load
 
 # Load the labels
-class_names = open("labels.txt", "r").readlines()
-
+try:
+    with open("labels.txt", "r") as file:
+        class_names = [line.strip()[2:] for line in file.readlines()]
+except Exception as e:
+    st.error(f"Error loading labels file: {e}")
+    st.stop()
 
 def classify_bird(image_path):
-    """Classifies a bird image and displays the results in a Streamlit UI."""
-
-    image = Image.open(image_path).convert("RGB")
-
-    # resizing the image to be at least 224x224 and then cropping from the center
-    size = (224, 224)
-    image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-
-    # turn the image into a numpy array
-    image_array = np.asarray(image)
-
-    # Normalize the image
-    normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
-
-    # Load the image into the array
-    data = np.expand_dims(normalized_image_array, axis=0)
-
-    # Predicts the model
-    prediction = model.predict(data)
-
-    # Get the top predicted class and its confidence score
-    top_class_idx = np.argmax(prediction[0])
-    top_confidence = prediction[0][top_class_idx]
-    top_class_name = class_names[top_class_idx].strip()[2:]
-
-    st.title("Bird Identification  App")
-
-    st.image(image, caption="Uploaded Image:")
-    st.write("Predicted Bird Class:")
-
-    if top_confidence > 0.97:
-        st.write(f"{top_class_name} - Confidence Score: {top_confidence:.4f}")
-    else:
-        st.write("Top 3 Possible Classes:")
-
-        # Get the top three predicted classes and their corresponding confidence scores
-        top_classes = np.argsort(prediction[0])[::-1][:3]
-        top_confidences = prediction[0][top_classes]
-
-        for i, class_idx in enumerate(top_classes):
-            class_name = class_names[class_idx].strip()[2:]
-            confidence_score = top_confidences[i]
-            st.write(f"{i + 1}. {class_name} - Confidence Score: {confidence_score:.4f}")
-
-
-reference_images_folder = "reference_images"
-os.makedirs(reference_images_folder, exist_ok=True)
-
-if __name__ == "__main__":
-    st.title("Bird Identification App")
-
-    image_file = st.file_uploader("Upload an image of a bird:")
-    if image_file is not None:
-        # Clear previous content and reset layout
-        st.empty()
-
-        # Display the Lottie animation and the uploaded image
-        classify_bird(image_file)
-
-        # Process the image for prediction
-        image = Image.open(image_file).convert("RGB")
-        size = (224, 224)
-        image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+    """Classifies a bird image and displays the results in Streamlit."""
+    try:
+        image = Image.open(image_path).convert("RGB")
+        image = ImageOps.fit(image, (224, 224), Image.Resampling.LANCZOS)
         image_array = np.asarray(image)
         normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
         data = np.expand_dims(normalized_image_array, axis=0)
 
         prediction = model.predict(data)
-        confidence_threshold = 0.97
+        top_class_idx = np.argmax(prediction[0])
+        top_confidence = prediction[0][top_class_idx]
+        top_class_name = class_names[top_class_idx]
 
-        if prediction[0][np.argmax(prediction[0])] < confidence_threshold:
-            st.write("Please select the correct species from the following options:")
-            prediction = model.predict(data)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.write(f"**Predicted Bird:** {top_class_name} (Confidence: {top_confidence:.4f})")
 
-            # Get the top three predicted classes and their corresponding confidence scores
+        if top_confidence < 0.97:
+            st.write("Top 3 Possible Classes:")
             top_classes = np.argsort(prediction[0])[::-1][:3]
-            top_confidences = prediction[0][top_classes]
-
-            click_counts = [0, 0, 0]  # Initialize click counts for each option
-
             for i, class_idx in enumerate(top_classes):
-                class_name = class_names[class_idx].strip()[2:]
-                confidence_score = top_confidences[i]
+                st.write(f"{i + 1}. {class_names[class_idx]} - Confidence: {prediction[0][class_idx]:.4f}")
 
-                # Display a progress bar to represent the intensity of clicks
-                progress_bar = st.progress(click_counts[i] / 10.0)  # Limit to 10 clicks
+    except Exception as e:
+        st.error(f"Error processing image: {e}")
 
-                if st.button(f"{i + 1}. {class_name} - Confidence Score: {confidence_score:.4f}"):
-                    st.write(f"Thank you for selecting the correct class: {class_name}.")
-                    click_counts[i] += 1
-                    progress_bar.progress(click_counts[i] / 10.0)
-                    # Automatically save reference image with the selected class name
-                    reference_image_path = os.path.join(reference_images_folder, f"{class_name}.jpg")
-                    with open(reference_image_path, "wb") as f:
-                        f.write(image_file.getvalue())
-                    st.write(f"Reference image for {class_name} saved.")
-                    break
-            else:  # This else block is executed if the for loop completes without a break
-                pass
-        else:
-            st.write("Feedback:")
-            feedback_option = st.radio("Did you find the classification accurate?", ("Like", "Dislike"))
+# Ensure directory for reference images exists
+reference_images_folder = "reference_images"
+os.makedirs(reference_images_folder, exist_ok=True)
 
-            if feedback_option == "Like":
-                if st.button("Submit Feedback"):
-                    st.write("Thank you for the feedback! Enjoy birding.")
-            elif feedback_option == "Dislike":
-                st.write("Sorry for the inconvenience. Please provide the correct species name:")
-                correct_name = st.text_input("Correct Species Name:")
+if __name__ == "__main__":
+    st.title("Bird Identification App")
+    image_file = st.file_uploader("Upload an image of a bird:")
+    
+    if image_file:
+        classify_bird(image_file)
 
-                if correct_name:
-                    st.write(f"Thank you for the feedback. We will improve our model for {correct_name}.")
+        # Save feedback and reference images
+        feedback = st.radio("Was the classification accurate?", ["Like", "Dislike"])
+        
+        if feedback == "Like" and st.button("Submit Feedback"):
+            st.success("Thank you for the feedback! 🐦")
+        
+        elif feedback == "Dislike":
+            correct_name = st.text_input("Enter the correct species name:")
+            if correct_name and st.button("Submit Correction"):
+                image_path = os.path.join(reference_images_folder, f"{correct_name}.jpg")
+                with open(image_path, "wb") as f:
+                    f.write(image_file.getvalue())
+                st.success(f"Reference image for {correct_name} saved!")
 
-                    # Automatically save reference image with corrected name
-                    if image_file is not None:
-                        reference_image_path = os.path.join(reference_images_folder, f"{correct_name}.jpg")
-                        with open(reference_image_path, "wb") as f:
-                            f.write(image_file.getvalue())
-                        st.write(f"Reference image for {correct_name} saved.")
+            if st.button("I don't know"):
+                unknown_filename = f"unknown_{uuid.uuid4().hex[:8]}.jpg"
+                unknown_path = os.path.join(reference_images_folder, unknown_filename)
+                with open(unknown_path, "wb") as f:
+                    f.write(image_file.getvalue())
+                st.success("Unknown image saved for further analysis.")
 
-                # Add an "I don't know" button
-                if st.button("I don't know"):
-                    st.write("Thank you for your response. The image has been saved for further analysis.")
-
-                    # Generate a unique filename using UUID (Universally Unique Identifier)
-                    unique_filename = f"unknown_{str(uuid.uuid4())[:8]}.jpg"
-
-                    unknown_image_path = os.path.join(reference_images_folder, unique_filename)
-                    with open(unknown_image_path, "wb") as f:
-                        f.write(image_file.getvalue())
-
-                    st.write("Unknown image saved.")
-
-    # Display icons at the bottom horizontally with links
+    # Social Media Links
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        if st.button("LinkedIn", key="linkedin"):
-            webbrowser.open_new_tab(linkedin_url)
+        if st.button("LinkedIn"):
+            webbrowser.open_new_tab(LINKEDIN_URL)
     with col2:
-        if st.button("Gmail", key="gmail"):
-            webbrowser.open_new_tab(gmail_url)
+        if st.button("Gmail"):
+            webbrowser.open_new_tab(GMAIL_URL)
     with col3:
-        if st.button("YouTube", key="youtube"):
-            webbrowser.open_new_tab(youtube_url)
+        if st.button("YouTube"):
+            webbrowser.open_new_tab(YOUTUBE_URL)
     with col4:
-        if st.button("About", key="about"):
-            webbrowser.open_new_tab(about_url)
+        if st.button("About"):
+            webbrowser.open_new_tab(ABOUT_URL)
