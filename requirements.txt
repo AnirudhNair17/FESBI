@@ -1,8 +1,7 @@
-keras
-numpy
-Pillow
-Pillow
-Requests
 streamlit
-streamlit_lottie
-tensorflow
+tensorflow==2.9
+keras==2.9
+numpy
+pillow
+requests
+streamlit-lottie
